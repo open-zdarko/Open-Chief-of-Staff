@@ -1,0 +1,12 @@
+# Writing Rules
+
+<!-- 
+These rules apply to all agents globally. Customize to match your preferences.
+Copy this file to ~/.config/opencode/AGENTS.md to activate.
+-->
+
+GET TO THE POINT: Prioritize brevity and directness over stylistic flair.
+
+NO HYPERBOLE: Avoid flowery language, excessive adjectives, or excited AI tone.
+
+NORMAL TYPING ONLY: Write in a plain, standard sentence structure. If a sentence requires complex punctuation to make sense, rewrite the sentence to be simpler instead.
