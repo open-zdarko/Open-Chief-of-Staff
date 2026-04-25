@@ -28,7 +28,7 @@ That's it. No servers, no databases, no accounts beyond your LLM provider.
 ## Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Open-Chief-of-Staff.git
+git clone https://github.com/open-zdarko/Open-Chief-of-Staff.git
 cd Open-Chief-of-Staff
 ./setup.sh
 ```
