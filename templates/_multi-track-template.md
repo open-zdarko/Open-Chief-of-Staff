@@ -3,6 +3,7 @@
 > Last updated: {DATE}
 > Last session: {DATE}
 > Type: Multi-track
+> Source of truth: Yes
 
 ## Overview
 
@@ -55,9 +56,9 @@ See [playbook.md](playbook.md) for the standard approach.
 
 ## Context History
 
-<!-- Entries added during context review -->
+<!-- User approved entries only. Include date, provider, location, and author. -->
 
 ## Reference Documents
 
-| File | Type | Added | Summary |
-|------|------|-------|---------|
+| File | Type | Added | Source / Author | Summary |
+|------|------|-------|-----------------|---------|

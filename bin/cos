@@ -1,0 +1,70 @@
+#!/bin/sh
+
+set -eu
+
+ENV_COS_ROOT=${COS_ROOT:-}
+ENV_COS_DATA_DIR=${COS_DATA_DIR:-}
+CONFIG_HOME=${COS_CONFIG_HOME:-"${XDG_CONFIG_HOME:-$HOME/.config}/open-chief-of-staff"}
+CONFIG_FILE=${COS_CONFIG_FILE:-"$CONFIG_HOME/env"}
+if [ -L "$CONFIG_FILE" ]; then
+    printf '%s\n' "cos: refusing symlinked configuration: $CONFIG_FILE" >&2
+    exit 1
+fi
+if [ -f "$CONFIG_FILE" ]; then
+    . "$CONFIG_FILE"
+fi
+if [ -n "$ENV_COS_ROOT" ]; then
+    COS_ROOT=$ENV_COS_ROOT
+fi
+if [ -n "$ENV_COS_DATA_DIR" ]; then
+    COS_DATA_DIR=$ENV_COS_DATA_DIR
+fi
+COS_ROOT=${COS_ROOT:-"$HOME/chief-of-staff"}
+COS_DATA_DIR=${COS_DATA_DIR:-"$COS_ROOT/projects"}
+export COS_ROOT COS_DATA_DIR
+
+usage() {
+    printf '%s\n' \
+        "Usage: cos [general|project NAME|NAME]" \
+        "" \
+        "  cos                 Start General mode with /cos" \
+        "  cos general         Start General mode with /cos" \
+        "  cos project NAME    Start focused mode with /project NAME" \
+        "  cos NAME            Short form for cos project NAME"
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    usage
+    exit 0
+fi
+
+if ! command -v opencode >/dev/null 2>&1; then
+    printf '%s\n' "cos: opencode is not installed" >&2
+    exit 1
+fi
+
+if [ ! -d "$COS_ROOT" ]; then
+    printf '%s\n' "cos: COS_ROOT does not exist: $COS_ROOT" >&2
+    printf '%s\n' "Run the Open Chief of Staff setup script first." >&2
+    exit 1
+fi
+
+case "${1:-}" in
+    ""|general|cos|/cos)
+        shift 2>/dev/null || true
+        prompt="/cos${*:+ $*}"
+        ;;
+    project|/project)
+        shift
+        if [ "$#" -eq 0 ]; then
+            printf '%s\n' "cos: project name is required" >&2
+            exit 2
+        fi
+        prompt="/project $*"
+        ;;
+    *)
+        prompt="/project $*"
+        ;;
+esac
+
+exec opencode "$COS_ROOT" --agent chief-of-staff --prompt "$prompt"

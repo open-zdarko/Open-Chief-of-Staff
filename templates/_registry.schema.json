@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/open-chief-of-staff/registry.schema.json",
+  "title": "Open Chief of Staff project registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "projects"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "projects": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/project" }
+    }
+  },
+  "$defs": {
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name", "type", "status", "path", "context_file", "index_file", "pending_file", "related", "sources"],
+      "properties": {
+        "display_name": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["project", "multi-track"] },
+        "status": { "type": "string", "minLength": 1 },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "context_file": { "$ref": "#/$defs/relativePath" },
+        "index_file": { "$ref": "#/$defs/relativePath" },
+        "pending_file": { "$ref": "#/$defs/relativePath" },
+        "related": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)(?!.*\\\\).+$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "provider", "locator", "label", "enabled"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "minLength": 1 },
+        "locator": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "enabled": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

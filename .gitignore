@@ -1,5 +1,9 @@
 # Never commit personal project data
 projects/
+cos.env
+_shared/
+_session-exports/
+*.conflict
 
 # OS files
 .DS_Store

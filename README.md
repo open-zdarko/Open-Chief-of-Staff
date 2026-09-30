@@ -1,29 +1,25 @@
 # Open Chief of Staff
 
-A personal AI chief of staff that helps you manage projects, prepare for meetings, draft documents, and track action items. It remembers context across sessions, learns your preferences over time, and adapts to whatever you are working on: professional, personal, or entrepreneurial.
+A local, persistent Chief of Staff harness for
+[OpenCode](https://opencode.ai). It supports cross project planning, focused
+project work, source aware context review, safe concurrent sessions, and
+recovery of interrupted OpenCode sessions.
 
-Built on [OpenCode](https://opencode.ai). Works with Claude, GPT, or any LLM provider that OpenCode supports.
-
-## What It Does
-
-**Persistent project context.** Each project has a living context file that tracks goals, status, key people, action items, signals, and history. The agent reads this at the start of every session so you never have to re-explain where things stand.
-
-**Cross session memory.** The agent remembers your preferences, corrections, and working patterns across all projects. If you tell it once that you prefer tables over prose, it remembers.
-
-**Session logging.** Every conversation is summarized and logged. You can ask "what did we discuss about X last month?" and get an answer.
-
-**Document management.** Store reference documents (contracts, meeting notes, research) in a project's `docs/` folder. The agent indexes them and can answer questions from them on demand. Agent generated output goes to `drafts/` and is never confused with source material.
-
-**Self improving skills.** When the agent works through a complex process, it offers to save the approach as a reusable skill. Next time, it follows the proven path.
-
-**Meeting prep, document drafting, strategic advice.** Ask it to prepare for a meeting, draft a proposal, summarize a situation, or think through a decision. It uses everything it knows about the project.
+The repository contains generic templates and tools. It contains no populated
+project data, provider credentials, or organization specific integrations.
 
 ## Requirements
 
-1. [OpenCode](https://opencode.ai) installed
-2. An API key for an LLM (Claude, GPT, etc.), configured in OpenCode
+1. OpenCode
+2. Python 3.9 or newer
+3. Git, used locally by the safe writer for three way merges
+4. An LLM provider configured in OpenCode
 
-That's it. No servers, no databases, no accounts beyond your LLM provider.
+## Supported Platforms
+
+The harness supports macOS and Linux. The safe writer requires POSIX advisory
+file locking through Python's `fcntl` module. Native Windows is not supported.
+Windows users can run the harness inside WSL on a Linux filesystem.
 
 ## Install
 
@@ -33,133 +29,231 @@ cd Open-Chief-of-Staff
 ./setup.sh
 ```
 
-The setup script will:
-1. Ask where you want your projects directory (default: `~/chief-of-staff/projects/`)
-2. Create the directory with starter files
-3. Install the agents, commands, and skills into your OpenCode config
-4. Not overwrite anything that already exists
+Defaults:
 
-## Getting Started
+```text
+COS_ROOT=~/chief-of-staff
+COS_DATA_DIR=~/chief-of-staff/projects
+```
 
-After setup, open any terminal and run:
+Use other locations without editing repository files:
 
 ```bash
-opencode
+COS_ROOT="$HOME/my-cos" \
+COS_DATA_DIR="$HOME/private/project-data" \
+COS_BIN_DIR="$HOME/.local/bin" \
+./setup.sh
 ```
 
-### Fill in your identity
+Setup creates missing data templates but never overwrites files in
+`COS_DATA_DIR`. New private data directories use mode `700`; new data files use
+mode `600`.
 
-Edit `~/chief-of-staff/projects/_identity.md` to tell the agent who you are. This helps it adapt its tone and advice to your context. You can be as brief or detailed as you want.
+Setup records checksums for installed harness files beneath
+`${XDG_CONFIG_HOME:-~/.config}/open-chief-of-staff/managed/`. It updates a file
+only when the current checksum matches the version it previously installed.
+Unknown or locally modified files are preserved and setup exits with an error.
+To deliberately adopt and replace one, rerun with
+`COS_REPLACE_UNMANAGED=1`; setup backs it up beneath the same configuration
+directory before replacement. Repeated setup with unchanged files creates no
+new backup.
 
-### Create your first project
+Existing `opencode.json`, `opencode.jsonc`, `AGENTS.md`, and optional bundled
+skills are preserved. Restart OpenCode after installation so agent, command,
+and skill changes take effect.
 
-```
-/project my-startup
-```
+## Launcher
 
-If the project does not exist, the agent will create it from the template and ask you to describe it.
+Ensure `COS_BIN_DIR` is on `PATH`, then use:
 
-### Work on an existing project
-
-```
-/project my-startup
-```
-
-The agent loads the project context, checks for pending items, and tells you where things stand. Then ask it anything:
-
-- "Help me prepare for tomorrow's meeting with the investors"
-- "Draft an email to the contractor about the timeline slip"
-- "What are the open action items?"
-- "What did we discuss last week?"
-
-### Review pending context
-
-If you have added files to a project's `docs/` folder or have pending review items:
-
-```
-/review-context my-startup
+```bash
+cos
+cos project my-project
+cos my-project
 ```
 
-## Project Structure
+`cos` starts OpenCode at `COS_ROOT` and injects `/cos`. A project name injects
+`/project <name>`. Setup stores installation discovery settings at the fixed
+location `${XDG_CONFIG_HOME:-~/.config}/open-chief-of-staff/env`, so the
+launcher can rediscover a custom `COS_ROOT` without the variable already being
+set. `COS_CONFIG_HOME` or `COS_CONFIG_FILE` can select another configuration
+location. Exported `COS_ROOT` and `COS_DATA_DIR` values take precedence.
 
-Your projects directory looks like this after setup:
+The slash commands also work in an existing OpenCode session:
 
-```
-~/chief-of-staff/projects/
-  _identity.md          # Who you are (read by the agent every session)
-  _memory.md            # Agent's learned preferences (auto-managed)
-  _session-log.md       # Log of every session (auto-managed)
-  _registry.json        # Master list of all projects
-  _template.md          # Template for new projects
-  _multi-track-template.md  # Template for multi-track projects
-
-  my-startup/
-    context.md          # Living project state
-    docs/               # Your reference documents (contracts, notes, etc.)
-    drafts/             # Agent generated output (briefs, proposals, etc.)
-    skills/             # Learned approaches specific to this project
+```text
+/cos
+/project my-project
+/review-context my-project
 ```
 
-## Project Types
+## Modes
 
-### Standard Project
+### General Mode
 
-A single focus area: a client engagement, a business idea, a home renovation, a job search, a personal goal. One context file tracking everything.
+`/cos` loads global memory, the project registry, the generated dashboard, and
+session history. It supports prioritization, comparisons, and session search.
+The dashboard is read only and advisory. General mode never writes project
+context.
 
-### Multi-Track Project
+### Project Mode
 
-An umbrella with multiple sub-tracks: a consulting practice with several clients, a startup with multiple product lines, an investment portfolio. Includes a playbook and a track overview table. Sub-tracks can graduate to standalone projects.
+`/project <name>` loads General context plus one project's curated context,
+activity index, pending candidates, and project skills. The project's
+`context.md` is the source of truth. Index, pending, dashboard, and related
+project data remain supplementary until the user approves them.
 
-## How Memory Works
+## Data Layout
 
-The agent maintains two layers of memory:
+```text
+$COS_DATA_DIR/
+  _identity.md
+  _memory.md
+  _session-log.md
+  _registry.json
+  _registry.schema.json
+  _dashboard.md
+  _template.md
+  _multi-track-template.md
+  _index-template.md
+  _pending-template.md
+  _shared/
+    snapshots/
 
-1. **Project context** (`context.md`): Everything about a specific project. Goals, status, people, history, signals. Updated during sessions when you approve changes.
+  my-project/
+    context.md
+    index.md
+    pending.md
+    docs/
+    drafts/
+    skills/
+```
 
-2. **Global memory** (`_memory.md`): Your preferences and patterns across all projects. The agent writes here proactively when it learns something useful. Maximum 50 entries, automatically consolidated.
+`docs/` contains user controlled source material. `drafts/` contains generated
+output and is never scanned or treated as factual source material.
 
-Both persist across sessions. When you start a conversation, the agent reads both to pick up where you left off.
+## Registry
 
-## Skills
+The registry is described by `_registry.schema.json` and enforced by the
+dependency free validator at `$COS_ROOT/tools/validate-registry.py`. Commands
+run the validator before following project paths. It rejects absolute paths,
+dot components, traversal, unsafe slugs, duplicate managed paths, and invalid
+relationships. Each project records relative data paths, relationships, and
+optional provider agnostic source descriptors:
 
-Skills are reusable approaches the agent has learned. Two kinds:
+```json
+{
+  "display_name": "Website launch",
+  "type": "project",
+  "status": "active",
+  "path": "website-launch",
+  "context_file": "context.md",
+  "index_file": "index.md",
+  "pending_file": "pending.md",
+  "related": [],
+  "sources": [
+    {
+      "id": "planning-notes",
+      "provider": "document-system",
+      "locator": "stable-page-id",
+      "label": "Planning notes",
+      "enabled": true
+    }
+  ]
+}
+```
 
-- **Project skills** (stored in `{project}/skills/`): Loaded only when that project is active. Example: "How to prep for the quarterly investor call."
-- **Global skills** (stored in `~/.config/opencode/skills/`): Available across all projects. Example: "How to structure an executive brief."
+Do not put tokens, passwords, raw messages, or document bodies in the registry.
 
-The agent offers to create skills after complex workflows. You can also ask it to save an approach at any time.
+## Attribution And Context Safety
 
-### Included Skills
+Every external or manually discovered index item records who said it, when it
+occurred, where it came from, and which provider supplied it. Unknown fields
+remain unknown. The harness does not infer them.
 
-- **docx**: Create, edit, and analyze Word documents. Handles formatting, tables, tracked changes, and more.
-- **pm**: Project management expertise for planning, task breakdown, and sprint management.
+Optional sync tools may write attributed entries to `index.md` and candidates
+to `pending.md`. Discovery does not update curated context. `/review-context`
+presents each candidate and requires explicit approval before a concise,
+attributed update enters `context.md`.
 
-## Customization
+Context review snapshots shared state before reading it. Approved context and
+pending status changes are applied with three way merge. A conflict leaves the
+live file unchanged until the user reviews a clean resolution.
 
-### Writing style
+This prevents three common forms of context pollution:
 
-Edit `~/.config/opencode/AGENTS.md` to change the agent's writing style across all interactions. The default keeps things brief and direct. Add your own rules.
+1. Generated drafts being recycled as source material
+2. One project's information leaking into another project
+3. An author's opinion being presented as a verified fact
 
-### Templates
+No external sync provider is included. A custom provider only needs to emit the
+generic index and pending formats. Keep provider code, credentials, and
+organization specific endpoints outside this public harness.
 
-Edit the templates in your projects directory to match your workflow. Add sections, remove sections, change the structure. The agent adapts to whatever sections exist in a project's context.md.
+## Concurrent Sessions
 
-### MCP Integrations
+The `cos-safe-writes` skill prevents cooperating sessions from overwriting
+shared files. It takes a start snapshot, uses file locks for surgical writes,
+journals each session's changes, and checks for lost updates at close.
+It detects concurrent file creation and deletion, refuses symlinked paths, and
+compares journaled expected content with current content so a later external
+overwrite is not attributed to the original writer. Session log entries carry
+second precision and a safe writer session ID.
 
-OpenCode supports MCP (Model Context Protocol) servers for connecting to external services. You can add integrations in `~/.config/opencode/opencode.json`. Examples:
+Conflicted merges emit a digest of the live file used to generate the conflict.
+A forced resolution write requires that digest and refuses if the file changed
+again. The merge must be rerun before resolving newer content.
 
-- Google Calendar for meeting awareness
-- Slack or Teams for message context
-- A CRM for customer data
-- GitHub or GitLab for code project tracking
+Manual use:
 
-These are optional. The Chief of Staff works with just local files.
+```bash
+export COSW_SESSION=$(python3 "$COS_ROOT/tools/cosw.py" snapshot --quiet)
+python3 "$COS_ROOT/tools/cosw.py" append-memory "2026-09-30: Example preference"
+python3 "$COS_ROOT/tools/cosw.py" check
+```
+
+Snapshots contain private project state and stay beneath
+`$COS_DATA_DIR/_shared/`.
+
+## Session Recovery
+
+The `session-recovery` skill finds sessions through `opencode db`, exports one
+to a private temporary directory, and renders its recoverable messages. It uses
+`COS_ROOT` and `COS_DATA_DIR`; it contains no hardcoded development path.
+
+Visible messages, tool calls, patches, and compaction markers can be recovered.
+Hidden assistant reasoning cannot. Recovered conversations are read to the end
+before any state update because later turns may reverse earlier positions.
+
+## Optional Integrations
+
+OpenCode can connect to calendars, chat systems, document stores, issue
+trackers, and other services through user configured tools or MCP servers. This
+repository does not install an integration or send data to an endpoint.
+
+Treat every integration as an untrusted discovery source until the user reviews
+its output. Use stable source IDs, retain author and event timestamps, and keep
+credentials in the provider's supported secret store rather than project files.
 
 ## Privacy
 
-All data stays on your machine. Project files are plain markdown and JSON in a directory you control. Nothing is sent anywhere except to your chosen LLM provider (through OpenCode) during active conversations.
+Project data is separate from this repository and should never be committed.
+OpenCode sends active conversation context to the LLM provider selected by the
+user. Optional tools may send data to their configured services. Local storage
+does not mean model requests remain local.
 
-The `.gitignore` in this repo excludes the projects directory so you never accidentally commit personal data if you fork the repo.
+Read [PRIVACY.md](PRIVACY.md) before adding real project data or external
+integrations.
+
+## Validation
+
+```bash
+bash -n setup.sh
+python3 -m py_compile skills/cos-safe-writes/cosw.py skills/session-recovery/render.py
+python3 scripts/validate_registry.py --registry templates/_registry.json
+python3 -m unittest discover -s tests -p 'test_*.py'
+bash tests/test_setup.sh
+```
 
 ## License
 

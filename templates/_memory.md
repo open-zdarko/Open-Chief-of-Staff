@@ -7,9 +7,11 @@ and sessions. The agent reads this at session start and writes to it during
 conversations when it learns something worth remembering.
 
 Rules:
-- Maximum 50 entries
+- Keep only information useful across many projects
 - One entry per line, prefixed with the date it was learned
-- When full, consolidate related entries before adding new ones
+- Route project facts to that project's context.md
+- Route detailed procedures to a skill instead of global memory
 - Never store trivial, obvious, or session specific information
 - Never store raw data dumps or large code blocks
+- Use the cos-safe-writes skill for every write
 -->
