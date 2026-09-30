@@ -1,0 +1,25 @@
+setup.sh
+  s_6d84d3ba072cbf::t_35a983e3fb3679 3,5-6,9-37,39-45,47-50,52-62,64-66,68-71,74-78,80-82,84-90,92-100,102-110,112-142,144-152,154-158,160-174,176-189,191-192,194,196,198,200,202,205-226,228-229,231,235-236,238-248,251-256
+skills/cos-safe-writes/SKILL.md
+  s_6d84d3ba072cbf::t_d182ffcda08ad2 1-83
+skills/session-recovery/render.py
+  s_6d84d3ba072cbf::t_df59d8d7257466 1-92
+tests/test_cosw.py
+  s_6d84d3ba072cbf::t_768433078627a6 1-324
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "76f9abe298988b4672be857cd4f806fc99f70f2e",
+  "prompts": {},
+  "sessions": {
+    "s_6d84d3ba072cbf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f0b7ba1ddffeS5tVI5mDvwllUX",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "seph <seph@cloudflare.com>"
+    }
+  }
+}
